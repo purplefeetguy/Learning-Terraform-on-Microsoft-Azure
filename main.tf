@@ -53,22 +53,30 @@ resource "azurerm_subnet" "web_server_subnet" {
   count                     = "${length(var.web_server_subnets)}"
 }
 
-resource "azurerm_network_interface" "web_server_nic" {
-  name                = "${var.web_server_name}-nic-${format("%02d",count.index)}"
-  location            = "${var.web_server_location}"
-  resource_group_name = "${azurerm_resource_group.web_server_rg.name}"
-  count               = "${var.web_server_count}"
+# resource "azurerm_network_interface" "web_server_nic" {
+#   name                = "${var.web_server_name}-nic-${format("%02d",count.index)}"
+#   location            = "${var.web_server_location}"
+#   resource_group_name = "${azurerm_resource_group.web_server_rg.name}"
+#   count               = "${var.web_server_count}"
 
-  ip_configuration {
-      name                          = "${var.web_server_name}-ip-${format("%02d",count.index)}"
-      subnet_id                     = "${azurerm_subnet.web_server_subnet.*.id[count.index]}"
-      private_ip_address_allocation = "dynamic"
-      public_ip_address_id          = "${azurerm_public_ip.web_server_public_ip.*.id[count.index]}"
-  }
-}
+#   ip_configuration {
+#       name                          = "${var.web_server_name}-ip-${format("%02d",count.index)}"
+#       subnet_id                     = "${azurerm_subnet.web_server_subnet.*.id[count.index]}"
+#       private_ip_address_allocation = "dynamic"
+#       public_ip_address_id          = "${azurerm_public_ip.web_server_public_ip.*.id[count.index]}"
+#   }
+# }
+
+# resource "azurerm_public_ip" "web_server_public_ip" {
+#     name                         = "${var.web_server_name}-public-ip-${format("%02d",count.index)}"
+#     location                     = "${var.web_server_location}"
+#     resource_group_name          = "${azurerm_resource_group.web_server_rg.name}"
+#     allocation_method            = "${var.environment == "production" ? "Static" : "Dynamic"}"
+#     count                        = "${var.web_server_count}"
+# }
 
 resource "azurerm_public_ip" "web_server_public_ip" {
-    name                         = "${var.web_server_name}-public-ip-${format("%02d",count.index)}"
+    name                         = "${var.resource_prefix}-public-ip"
     location                     = "${var.web_server_location}"
     resource_group_name          = "${azurerm_resource_group.web_server_rg.name}"
     allocation_method            = "${var.environment == "production" ? "Static" : "Dynamic"}"
@@ -76,7 +84,7 @@ resource "azurerm_public_ip" "web_server_public_ip" {
 }
 
 resource "azurerm_network_security_group" "web_server_nsg" {
-    name                         = "${var.web_server_name}-nsg"
+    name                         = "${var.resource_prefix}-nsg"
     location                     = "${var.web_server_location}"
     resource_group_name          = "${azurerm_resource_group.web_server_rg.name}"    
 }
@@ -111,16 +119,19 @@ resource "azurerm_network_security_rule" "web_server_nsg_rule_ssh" {
     count                       = "${var.environment == "production" ? 1 : 0 }"
 }
 
-resource "azurerm_virtual_machine" "web_server" {
-    name                         = "${var.web_server_name}-${format("%02d",count.index)}"
+resource "azurerm_virtual_machine_scale_set" "web_server" {
+    name                         = "${var.web_server_name}-scale-set"
     location                     = "${var.web_server_location}"
     resource_group_name          = "${azurerm_resource_group.web_server_rg.name}"
-    network_interface_ids        = ["${azurerm_network_interface.web_server_nic.*.id[count.index]}"]
-    vm_size                      = "Standard_B1s"
-    availability_set_id          = "${azurerm_availability_set.web_server_availability_set.id}"
-    count                        = "${var.web_server_count}"
-    
-    storage_image_reference {
+    upgrade_policy_mode          = "manual"
+
+    sku {
+        name = "Standard_B1s"
+        tier = "Standard"
+        capacity = "${var.web_server_count}"
+    }
+
+    storage_profile_image_reference {
         publisher = "MicrosoftWindowsServer"
         offer     = "WindowsServer"
         sku       = "2016-Datacenter-Server-Core-smalldisk"
@@ -134,18 +145,30 @@ resource "azurerm_virtual_machine" "web_server" {
     #     version   = "latest"
     # }
 
-    storage_os_disk {
-        name              = "${var.web_server_name}-os-${format("%02d",count.index)}"
+    storage_profile_os_disk {
+        name              = ""
         caching           = "ReadWrite"
         create_option     = "FromImage"
         managed_disk_type = "Standard_LRS"
     }
 
     os_profile {
-        computer_name  = "${var.web_server_name}-${format("%02d",count.index)}"
-        admin_username = "webserver"
-        admin_password = "Passw0rd123!"
+        computer_name_prefix  = "${var.web_server_name}"
+        admin_username        = "webserver"
+        admin_password        = "Passw0rd123!"
     }
+
+    network_profile {
+        name    = "web_server_network_profile"
+        primary = true
+
+        ip_configuration {
+            name      = "${var.web_server_name}"
+            primary   = true
+            subnet_id = "${azurerm_subnet.web_server_subnet.*.id[0]}"
+        }
+    }
+
 
     os_profile_windows_config {
 
@@ -157,11 +180,11 @@ resource "azurerm_virtual_machine" "web_server" {
 
 }
 
-resource "azurerm_availability_set" "web_server_availability_set" {
-      name                        = "${var.resource_prefix}-availability-set"
-      location                    = "${var.web_server_location}"
-      resource_group_name         = "${azurerm_resource_group.web_server_rg.name}"
-      managed                     = true
-      platform_fault_domain_count = 2
-}
+# resource "azurerm_availability_set" "web_server_availability_set" {
+#       name                        = "${var.resource_prefix}-availability-set"
+#       location                    = "${var.web_server_location}"
+#       resource_group_name         = "${azurerm_resource_group.web_server_rg.name}"
+#       managed                     = true
+#       platform_fault_domain_count = 2
+# }
 
