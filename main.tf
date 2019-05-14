@@ -3,16 +3,16 @@ variable "client_id" {}
 variable "client_secret" {}
 variable "tenant_id" {}
 variable "subscription_id" {}
-
 variable "web_server_location" {}
 variable "web_server_rg" {}
 variable "resource_prefix" {}
 variable "web_server_address_space" {}
-variable "web_server_address_prefix" {}
 variable "web_server_name" {}
-
 variable "environment" {}
 variable "web_server_count" {}
+variable "web_server_subnets" {
+    type = "list"
+}
 
 
 
@@ -45,11 +45,12 @@ resource "azurerm_virtual_network" "web_server_vnet" {
 }
 
 resource "azurerm_subnet" "web_server_subnet" {
-  name                      = "${var.resource_prefix}-subnet"
+  name                      = "${var.resource_prefix}-subnet-${substr(var.web_server_subnets[count.index], 0, length(var.web_server_subnets[count.index]) - 3)}"
   resource_group_name       = "${azurerm_resource_group.web_server_rg.name}"
   virtual_network_name      = "${azurerm_virtual_network.web_server_vnet.name}"
-  address_prefix            = "${var.web_server_address_prefix}"
+  address_prefix            = "${var.web_server_subnets[count.index]}"
   network_security_group_id = "${azurerm_network_security_group.web_server_nsg.id}"
+  count                     = "${length(var.web_server_subnets)}"
 }
 
 resource "azurerm_network_interface" "web_server_nic" {
@@ -60,7 +61,7 @@ resource "azurerm_network_interface" "web_server_nic" {
 
   ip_configuration {
       name                          = "${var.web_server_name}-ip-${format("%02d",count.index)}"
-      subnet_id                     = "${azurerm_subnet.web_server_subnet.id}"
+      subnet_id                     = "${azurerm_subnet.web_server_subnet.*.id[count.index]}"
       private_ip_address_allocation = "dynamic"
       public_ip_address_id          = "${azurerm_public_ip.web_server_public_ip.*.id[count.index]}"
   }
