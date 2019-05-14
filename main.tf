@@ -117,19 +117,20 @@ resource "azurerm_virtual_machine" "web_server" {
     availability_set_id          = "${azurerm_availability_set.web_server_availability_set.id}"
     count                        = "${var.web_server_count}"
     
+    storage_image_reference {
+        publisher = "MicrosoftWindowsServer"
+        offer     = "WindowsServer"
+        sku       = "2016-Datacenter-Server-Core-smalldisk"
+        version   = "2016.127.20190416"
+    }
+
     # storage_image_reference {
-    #     publisher = "MicrosoftWndowsServer"
-    #     offer     = "WindowsServer"
-    #     sku       = "2016-Datacenter-Server-Core-smalldisk"
-    #     version   = "2016.127.20190416"
+    #     publisher = "Canonical"
+    #     offer     = "UbuntuServer"
+    #     sku       = "18.04-LTS"
+    #     version   = "latest"
     # }
 
-    storage_image_reference {
-        publisher = "Canonical"
-        offer     = "UbuntuServer"
-        sku       = "18.04-LTS"
-        version   = "latest"
-    }
     storage_os_disk {
         name              = "${var.web_server_name}-os-${format("%02d",count.index)}"
         caching           = "ReadWrite"
@@ -143,13 +144,13 @@ resource "azurerm_virtual_machine" "web_server" {
         admin_password = "Passw0rd123!"
     }
 
-    # os_profile_windows_config {
+    os_profile_windows_config {
 
-    # }
-
-    os_profile_linux_config {
-        disable_password_authentication = false
     }
+
+    # os_profile_linux_config {
+    #     disable_password_authentication = false
+    # }
 
 }
 
