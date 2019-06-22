@@ -6,7 +6,7 @@ variable "locations" {
     type = "map"
     default = {
         location1 = "westus2"
-        locaiton2 = "westeurope"
+        location2 = "westeurope"
     }
 }
 

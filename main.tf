@@ -17,12 +17,8 @@ variable "terraform_script_version" {}
 variable "domain_name_label" {}
 
 
-
-
-
-
 provider "azurerm" {
-    version         = "1.27.0"
+    version         = "1.30.1"
     client_id       = "${var.client_id}"
     client_secret   = "${var.client_secret}"
     tenant_id       = "${var.tenant_id}"
