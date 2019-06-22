@@ -18,20 +18,13 @@ variable "domain_name_label" {}
 
 
 provider "azurerm" {
-    version         = "1.30.1"
+    version         = "1.27.0"
     client_id       = "${var.client_id}"
     client_secret   = "${var.client_secret}"
     tenant_id       = "${var.tenant_id}"
     subscription_id = "${var.subscription_id}"
 }
 
-# provider "azurerm" {
-#     version         = "1.27.0"
-#     client_id       = "e5653f3d-a55e-474d-8386-c511590722e8"
-#     client_secret   = "IA72SU=wUdlqeJ[:tilteE-pNICuXe41"
-#     tenant_id       = "b82a4829-cdd4-48de-b142-985c68d41b4c"
-#     subscription_id = "0b55b4c7-3322-4eb8-988a-0cda8f823217"
-# }
 
 locals {
   web_server_name = "${var.environment == "production" ? "${var.web_server_name}-prd" : "${var.web_server_name}-dev"}"
@@ -192,14 +185,28 @@ resource "azurerm_virtual_machine_scale_set" "web_server" {
         }
     }
 
-
     os_profile_windows_config {
-
+        provision_vm_agent = true
     }
 
     # os_profile_linux_config {
     #     disable_password_authentication = false
     # }
+
+    extension {
+        name                 = "${local.web_server_name}-extension"
+        publisher            = "Microsoft.Compute"
+        type                 = "CustomScriptExtension"
+        type_handler_version = "1.9"
+
+        settings = <<SETTINGS
+        {
+            "fileUris": ["https://raw.githubusercontent.com/eltimmo/learning/master/azureInstallWebServer.ps1"],
+            "commandToExecute": "start powershell -ExecutionPolicy Unrestricted -File azureInstallWebServer.ps1"
+        }
+        SETTINGS
+
+    }
 
 }
 

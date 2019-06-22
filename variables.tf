@@ -5,8 +5,8 @@ variable "server_name" {
 variable "locations" {
     type = "map"
     default = {
-        location1 = "westus2"
-        location2 = "westeurope"
+        location1 = "eastus2"
+        location2 = "westus2"
     }
 }
 
