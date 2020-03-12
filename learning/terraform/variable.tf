@@ -11,3 +11,5 @@ variable "web_server_address_space" {}
 variable "web_server_address_prefix" {}
 
 variable "web_server_name" {}
+
+variable "environment" {}
