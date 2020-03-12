@@ -5,3 +5,8 @@ provider "azurerm" {
   client_secret   = var.client_secret
   tenant_id       = var.tenant_id
 }
+
+resource "azurerm_resource_group" "web_server_rg" {
+  name = var.web_server_rg
+  location = var.web_server_location
+}
