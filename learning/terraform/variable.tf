@@ -9,3 +9,5 @@ variable "web_server_rg" {}
 variable "resource_prefix" {}
 variable "web_server_address_space" {}
 variable "web_server_address_prefix" {}
+
+variable "web_server_name" {}
