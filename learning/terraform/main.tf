@@ -19,10 +19,10 @@ resource "azurerm_virtual_network" "web_server_vnet" {
 }
 
 resource "azurerm_subnet" "web_server_subnet" {
-  name                      = "${var.resource_prefix}-subnet"
-  resource_group_name       = azurerm_resource_group.web_server_rg.name
-  virtual_network_name      = azurerm_virtual_network.web_server_vnet.name
-  address_prefix            = var.web_server_address_prefix
+  name                 = "${var.resource_prefix}-subnet"
+  resource_group_name  = azurerm_resource_group.web_server_rg.name
+  virtual_network_name = azurerm_virtual_network.web_server_vnet.name
+  address_prefix       = var.web_server_address_prefix
 }
 
 resource "azurerm_network_interface" "web_server_nic" {
@@ -39,10 +39,10 @@ resource "azurerm_network_interface" "web_server_nic" {
 }
 
 resource "azurerm_public_ip" "web_server_public_ip" {
-  name                         = "${var.web_server_name}-public-ip"
-  location                     = var.web_server_location
-  resource_group_name          = azurerm_resource_group.web_server_rg.name
-  allocation_method = var.environment == "production" ? "Static" : "Dynamic"
+  name                = "${var.web_server_name}-public-ip"
+  location            = var.web_server_location
+  resource_group_name = azurerm_resource_group.web_server_rg.name
+  allocation_method   = var.environment == "production" ? "Static" : "Dynamic"
 }
 
 resource "azurerm_network_security_group" "web_server_nsg" {
@@ -66,6 +66,38 @@ resource "azurerm_network_security_rule" "web_server_nsg_rule_rdp" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "web_server_subnet_nsg" {
-  subnet_id = azurerm_subnet.web_server_subnet.id
+  subnet_id                 = azurerm_subnet.web_server_subnet.id
   network_security_group_id = azurerm_network_security_group.web_server_nsg.id
+}
+
+resource "azurerm_virtual_machine" "web_server" {
+  name                  = var.web_server_name
+  location              = var.web_server_location
+  resource_group_name   = azurerm_resource_group.web_server_rg.name
+  network_interface_ids = [azurerm_network_interface.web_server_nic.id]
+  vm_size               = "Standard_A2"
+
+  storage_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-datacenter-core-smalldisk"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name              = "${var.web_server_name}-os"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  os_profile {
+    computer_name  = var.web_server_name
+    admin_username = "testadmin"
+    admin_password = "Password1234!"
+  }
+
+  os_profile_windows_config {
+
+  }
 }
